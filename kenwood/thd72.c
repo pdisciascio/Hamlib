@@ -159,7 +159,8 @@ int thd72_open(RIG *rig)
 
   //ret = kenwood_transaction(rig, "", NULL, 0);
   //DELAY;
-  ret = rig_set_vfo(rig, RIG_VFO_A);
+  //ret = rig_set_vfo(rig, RIG_VFO_A);
+  ret = 0; /* testing.  i assume set_vfo is needed sometimes, but it breaks ptt_off (i.e. RX) */
 
   return ret;
 }
@@ -200,6 +201,11 @@ static int thd72_set_ptt(RIG *rig, vfo_t vfo, ptt_t ptt)
   struct kenwood_priv_data *priv = rig->state.priv;
   rig_debug(RIG_DEBUG_TRACE, "%s: called\n", __func__);
 
+  if (ptt == RIG_PTT_OFF) /* don't assert BC 0 when PTT is on.  the d72a does not allow for this */
+  {
+    return kenwood_transaction(rig,"RX",NULL,0);
+  }
+
   char vfonum = '0';
 
   if (vfo == RIG_VFO_B || priv->split)
@@ -215,7 +221,7 @@ static int thd72_set_ptt(RIG *rig, vfo_t vfo, ptt_t ptt)
     return retval;
   }
 
-  return kenwood_transaction(rig, (ptt == RIG_PTT_ON) ? "TX" : "RX", NULL, 0);
+  return kenwood_transaction(rig, "TX", NULL, 0);
 }
 
 static int thd72_get_vfo(RIG *rig, vfo_t *vfo)
